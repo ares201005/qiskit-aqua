@@ -162,18 +162,35 @@ class VQEAdapt(VQAlgorithm):
         theta = []
         max_grad = ()
         iteration = 0
+
+        print("test-zhy")
+
         while not threshold_satisfied and not alternating_sequence:
             iteration += 1
             logger.info('--- Iteration #%s ---', str(iteration))
+            print('=======================================================================')
+            print('--- Iteration #%s ---', str(iteration), ' parameter.size=', len(theta))
+            print('=======================================================================')
             # compute gradients
             cur_grads = self._compute_gradients(self._excitation_pool, theta, self._delta,
                                                 self._var_form_base, self._operator,
                                                 self._optimizer)
+
+            print("gradients computed!")
+            # ZY:
+            # Thought 1: can we compute the entropy gradient here, and grow the ansanz according to this gradient
+            # thought 2: permutate the Hamiltonain according to the mutual information
+            #
+
             # pick maximum gradient
             max_grad_index, max_grad = max(enumerate(cur_grads),
                                            key=lambda item: np.abs(item[1][0]))
             # store maximum gradient's index for cycle detection
             prev_op_indices.append(max_grad_index)
+
+            print("maximum gradient: %s %s", str(np.abs(max_grad[0])), max_grad[1], str(self._threshold))
+            print('prev_op_indeces=', prev_op_indices)
+
             # log gradients
             gradlog = "\nGradients in iteration #{}".format(str(iteration))
             gradlog += "\nID: Excitation Operator: Gradient  <(*) maximum>"
@@ -182,7 +199,11 @@ class VQEAdapt(VQAlgorithm):
                 if grad[1] == max_grad[1]:
                     gradlog += '\t(*)'
             logger.info(gradlog)
-            if np.abs(max_grad[0]) < self._threshold:
+            print(gradlog)
+
+            print('test-zy(adapt-vqe): 1')
+
+            if np.abs(max_grad[0]) < self._threshold and iteration > 1:
                 logger.info("Adaptive VQE terminated succesfully with a final maximum gradient: %s",
                             str(np.abs(max_grad[0])))
                 threshold_satisfied = True
@@ -190,17 +211,26 @@ class VQEAdapt(VQAlgorithm):
             # check indices of picked gradients for cycles
             if cycle_regex.search(' '.join(map(str, prev_op_indices))) is not None:
                 logger.info("Alternating sequence found. Finishing.")
+                print(map(str, prev_op_indices))
+                print(' '.join(map(str, prev_op_indices)))
                 logger.info("Final maximum gradient: %s", str(np.abs(max_grad[0])))
                 alternating_sequence = True
                 break
             # add new excitation to self._var_form_base
             self._var_form_base.push_hopping_operator(max_grad[1])
             theta.append(0.0)
+            print('test-zy(adapt-vqe): 2')
             # run VQE on current Ansatz
             algorithm = VQE(self._operator, self._var_form_base, self._optimizer,
                             initial_point=theta)
+            print('test-zy(adapt-vqe): 3')
             self._ret = algorithm.run(self._quantum_instance)
             theta = self._ret['opt_params'].tolist()
+            print('new energy=', self._ret['energy'])
+            print('new parameters=', theta)
+
+        print('final parameters=', theta)
+
         # once finished evaluate auxiliary operators if any
         if self._aux_operators is not None and self._aux_operators:
             algorithm = VQE(self._operator, self._var_form_base, self._optimizer,

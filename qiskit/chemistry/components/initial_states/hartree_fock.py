@@ -98,6 +98,9 @@ class HartreeFock(InitialState):
         bitstr[-self._num_alpha:] = True
         bitstr[-(half_orbitals + self._num_beta):-half_orbitals] = True
 
+        print('test-bitstr (hatree-fock)')
+        print(bitstr)
+
         if self._qubit_mapping == 'parity':
             new_bitstr = bitstr.copy()
 
@@ -123,7 +126,9 @@ class HartreeFock(InitialState):
             sq_list = (len(bitstr) - 1) - np.asarray(self._sq_list)
             bitstr = np.delete(bitstr, sq_list)
 
+        print(bitstr)
         self._bitstr = bitstr.astype(np.bool)
+        print(self._bitstr)
 
     def construct_circuit(self, mode='circuit', register=None):
         """

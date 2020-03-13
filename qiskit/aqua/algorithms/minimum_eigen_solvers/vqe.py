@@ -125,11 +125,14 @@ class VQE(VQAlgorithm):
         self._optimizer.set_max_evals_grouped(max_evals_grouped)
         self._callback = callback
         if initial_point is None:
+            #print('test-zy (VQE): initial_point is none! before preferred_init_points')
             self._initial_point = var_form.preferred_init_points
+            print('test-zy(VQE): initial_point=', self._initial_point)
         self._operator = operator
         self._eval_count = 0
         self._aux_operators = []
         if aux_operators is not None:
+            #print('test-zy(VQE): aux_operators is not none')
             aux_operators = \
                 [aux_operators] if not isinstance(aux_operators, list) else aux_operators
             for aux_op in aux_operators:
@@ -137,6 +140,8 @@ class VQE(VQAlgorithm):
         self._auto_conversion = auto_conversion
         logger.info(self.print_settings())
         self._var_form_params = ParameterVector('θ', self._var_form.num_parameters)
+
+        #print('test-zy(VQE): var_form_params', self._var_form_params)
 
         self._parameterized_circuits = None
 
@@ -302,6 +307,9 @@ class VQE(VQAlgorithm):
             and isinstance(self._operator,
                            (WeightedPauliOperator, TPBGroupedWeightedPauliOperator)))
 
+        print("use_simulator_snapshot_mode    = ",self._use_simulator_snapshot_mode)
+        print("quantum_instance.is_statevector=", self._quantum_instance.is_statevector)
+
         self._quantum_instance.circuit_summary = True
 
         self._eval_count = 0
@@ -315,6 +323,13 @@ class VQE(VQAlgorithm):
         self._eval_time = self._ret['eval_time']
         logger.info('Optimization complete in %s seconds.\nFound opt_params %s in %s evals',
                     self._eval_time, self._ret['opt_params'], self._eval_count)
+
+        #ZY
+        print('')
+        theta = self._ret['opt_params'].tolist()
+        print('Optimization complete in %d evals' % self._eval_count)
+        print('optimization parameters=', theta)
+
         self._ret['eval_count'] = self._eval_count
 
         self._ret['energy'] = self.get_optimal_cost()
@@ -373,6 +388,8 @@ class VQE(VQAlgorithm):
             to_be_simulated_circuits = functools.reduce(lambda x, y: x + y, circuits)
 
         start_time = time()
+
+        print('test-zy: call quantum_instance.execulte')
         result = self._quantum_instance.execute(to_be_simulated_circuits,
                                                 self._parameterized_circuits is not None)
 

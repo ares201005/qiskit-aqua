@@ -308,6 +308,15 @@ class WeightedPauliOperator(BaseOperator):
 
         return ret
 
+    def permute(self, index1, index2):
+        """
+        permute the pauli operators
+
+        """
+
+        return self
+
+
     def copy(self):
         """ Get a copy of self """
         return deepcopy(self)

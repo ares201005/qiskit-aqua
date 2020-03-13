@@ -144,6 +144,10 @@ class UCCSD(VariationalForm):
         self._num_time_slices = num_time_slices
         self._shallow_circuit_concat = shallow_circuit_concat
 
+        ## test-zy
+        print('test-zy(uccsd): qubit_mapping=', self._qubit_mapping)
+        print('test-zy(uccsd): initial_state=', self._initial_state) 
+
         # advanced parameters
         self._method_singles = method_singles
         self._method_doubles = method_doubles
@@ -151,6 +155,8 @@ class UCCSD(VariationalForm):
         self.same_spin_doubles = same_spin_doubles
         self._skip_commute_test = skip_commute_test
 
+
+        print("test-zy(uccsd): before compute_excitation_lists-1")
         self._single_excitations, self._double_excitations = \
             UCCSD.compute_excitation_lists([self._num_alpha, self._num_beta], self._num_orbitals,
                                            active_occupied, active_unoccupied,
@@ -159,15 +165,20 @@ class UCCSD(VariationalForm):
                                            method_doubles=self._method_doubles,
                                            excitation_type=self._excitation_type,)
 
+        print('test-zy(uccsd): build hooping operators')
         self._hopping_ops, self._num_parameters = self._build_hopping_operators()
         self._excitation_pool = None
         self._bounds = [(-np.pi, np.pi) for _ in range(self._num_parameters)]
+
+        print('test-zy(uccsd):hopping_ops')
+        print(self._hopping_ops)
 
         self._logging_construct_circuit = True
         self._support_parameterized_circuit = True
 
         self.uccd_singlet = False
         if self._method_doubles == 'succ_full':
+            print("test-zy(uccsd): before compute_excitation_lists-2")
             self.uccd_singlet = True
             self._single_excitations, self._double_excitations = \
                 UCCSD.compute_excitation_lists([self._num_alpha, self._num_beta],
@@ -181,10 +192,14 @@ class UCCSD(VariationalForm):
         if self.uccd_singlet:
             self._hopping_ops, _ = self._build_hopping_operators()
         else:
+            # what's the difference from the above mapping?
+            print('test-zy(uccsd): build hooping operators-singlet')
             self._hopping_ops, self._num_parameters = self._build_hopping_operators()
             self._bounds = [(-np.pi, np.pi) for _ in range(self._num_parameters)]
+            print('test-zy(uccsd): build hooping operators-singlet-done!', self._num_parameters)
 
         if self.uccd_singlet:
+            print("test-zy(uccsd): before compute_excitation_lists_singlet-1")
             self._double_excitations_grouped = \
                 UCCSD.compute_excitation_lists_singlet(self._double_excitations, num_orbitals)
             self.num_groups = len(self._double_excitations_grouped)
@@ -212,6 +227,8 @@ class UCCSD(VariationalForm):
 
             self._hopping_ops[len(self._single_excitations):] = self._hopping_ops_doubles_temp
 
+        print('test-zy(uccsd): uccsd initialization is done!')
+        logging.debug('test-zy(uccsd) uccsd initialization is done!')
         self._logging_construct_circuit = True
 
     @property
@@ -258,6 +275,15 @@ class UCCSD(VariationalForm):
         for op, index in results:
             if op is not None and not op.is_empty():
                 hopping_ops.append(op)
+
+                ### ZY test  
+                print('test-zy(uccsd): op, index, and pauli strings')
+                print(index)
+                print(op)
+                for kk in range(len(op._paulis)):
+                   print(op._paulis[kk][0],op._paulis[kk][1])
+                ### test
+
                 if len(index) == 2:  # for double excitation
                     s_e_list.append(index)
                 else:  # for double excitation
@@ -442,10 +468,13 @@ class UCCSD(VariationalForm):
         if self._initial_state is None:
             return None
         else:
+            print('test-zy(uccsd): self._initial_state is not none')
             bitstr = self._initial_state.bitstr
             if bitstr is not None:
+                print('test-zy(uccsd): bitstr is not none', self._num_parameters)
                 return np.zeros(self._num_parameters, dtype=np.float)
             else:
+                print('test-zy(uccsd): bitstr is none')
                 return None
 
     @staticmethod
@@ -483,6 +512,7 @@ class UCCSD(VariationalForm):
             ValueError: invalid setting of number of particles
             ValueError: invalid setting of number of orbitals
         """
+        print('test-zy(uccsd): entering computer_excitation_lists')
 
         if isinstance(num_particles, list):
             num_alpha = num_particles[0]
@@ -528,6 +558,13 @@ class UCCSD(VariationalForm):
             active_occ_list_alpha = list(range(0, num_alpha))
             active_occ_list_beta = [i + beta_idx for i in range(0, num_beta)]
 
+        #ZY: permute the list (to be finished)
+
+        print('----  active occ list (alpha) ---')
+        print(active_occ_list_alpha)
+        print('----  active occ list (beta) ---')
+        print(active_occ_list_beta)
+
         if active_unocc_list is not None:
             active_unocc_list = [i + min(num_alpha, num_beta) if i >= 0
                                  else i + num_orbitals // 2 for i in active_unocc_list]
@@ -545,6 +582,13 @@ class UCCSD(VariationalForm):
         else:
             active_unocc_list_alpha = list(range(num_alpha, num_orbitals // 2))
             active_unocc_list_beta = [i + beta_idx for i in range(num_beta, num_orbitals // 2)]
+
+        #ZY:
+        print('----  active unocc list (alpha) ---')
+        print(active_unocc_list_alpha)
+
+        print('----  active unocc list (beta) ---')
+        print(active_unocc_list_beta)
 
         logger.debug('active_occ_list_alpha %s', active_occ_list_alpha)
         logger.debug('active_unocc_list_alpha %s', active_unocc_list_alpha)
@@ -640,6 +684,7 @@ class UCCSD(VariationalForm):
         logger.debug('single_excitations (%s) %s', len(single_excitations), single_excitations)
         logger.debug('double_excitations (%s) %s', len(double_excitations), double_excitations)
 
+        print('test-zy(uccsd): leaving computer_excitation_lists')
         return single_excitations, double_excitations
 
     # below are all tool functions that serve to group excitations that are controlled by

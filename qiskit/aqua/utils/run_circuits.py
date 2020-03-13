@@ -199,10 +199,15 @@ def run_qobj(qobj, backend, qjob_config=None, backend_options=None,
     backend_options = backend_options or {}
     noise_config = noise_config or {}
 
+    # YZ
+    print("entering run_qobj", backend, backend_options)
+
     if backend is None or not isinstance(backend, BaseBackend):
         raise ValueError('Backend is missing or not an instance of BaseBackend')
 
     with_autorecover = not is_simulator_backend(backend)
+
+    print('with_autorecover=', with_autorecover)
 
     if MAX_CIRCUITS_PER_JOB is not None:
         max_circuits_per_job = int(MAX_CIRCUITS_PER_JOB)
@@ -314,7 +319,10 @@ def run_qobj(qobj, backend, qjob_config=None, backend_options=None,
 def run_on_backend(backend, qobj, backend_options=None,
                    noise_config=None, skip_qobj_validation=False):
     """ run on backend """
+
+    #print('run on backend!')  #YZ
     if skip_qobj_validation:
+        print('run on backend-1!')  #YZ
         job_id = str(uuid.uuid4())
         if is_aer_provider(backend):
             # pylint: disable=import-outside-toplevel
@@ -322,10 +330,13 @@ def run_on_backend(backend, qobj, backend_options=None,
             temp_backend_options = \
                 backend_options['backend_options'] if backend_options != {} else None
             temp_noise_config = noise_config['noise_model'] if noise_config != {} else None
+            print('AerJob') # YZ
             job = AerJob(backend, job_id,
                          backend._run_job, qobj, temp_backend_options, temp_noise_config, False)
             job._future = job._executor.submit(job._fn, job._job_id, job._qobj, *job._args)
         elif is_basicaer_provider(backend):
+            print('BasicAerJob') # YZ
+            print('backend_options', backend_options)  ## YZ
             backend._set_options(qobj_config=qobj.config, **backend_options)
             job = BasicAerJob(backend, job_id, backend._run_job, qobj)
             job._future = job._executor.submit(job._fn, job._job_id, job._qobj)
@@ -336,5 +347,6 @@ def run_on_backend(backend, qobj, backend_options=None,
             job = backend.run(qobj, **backend_options, **noise_config)
         return job
     else:
+        print('run on backend-2!')  #YZ
         job = backend.run(qobj, **backend_options, **noise_config)
         return job
