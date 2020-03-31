@@ -54,6 +54,8 @@ class UCCSD(VariationalForm):
                  num_particles: Union[List[int], int],
                  active_occupied: Optional[List[int]] = None,
                  active_unoccupied: Optional[List[int]] = None,
+                 entangled_occ: Optional[List[int]] = None,
+                 entangled_unocc: Optional[List[int]] = None,
                  initial_state: Optional[InitialState] = None,
                  qubit_mapping: str = 'parity',
                  two_qubit_reduction: bool = True,
@@ -165,7 +167,7 @@ class UCCSD(VariationalForm):
                                            method_doubles=self._method_doubles,
                                            excitation_type=self._excitation_type,)
 
-        print('test-zy(uccsd): build hooping operators')
+        print('test-zy(uccsd): build hopping operators')
         self._hopping_ops, self._num_parameters = self._build_hopping_operators()
         self._excitation_pool = None
         self._bounds = [(-np.pi, np.pi) for _ in range(self._num_parameters)]
@@ -193,10 +195,10 @@ class UCCSD(VariationalForm):
             self._hopping_ops, _ = self._build_hopping_operators()
         else:
             # what's the difference from the above mapping?
-            print('test-zy(uccsd): build hooping operators-singlet')
+            print('test-zy(uccsd): build hopping operators-double')
             self._hopping_ops, self._num_parameters = self._build_hopping_operators()
             self._bounds = [(-np.pi, np.pi) for _ in range(self._num_parameters)]
-            print('test-zy(uccsd): build hooping operators-singlet-done!', self._num_parameters)
+            print('test-zy(uccsd): build hopping operators-double-done!', self._num_parameters)
 
         if self.uccd_singlet:
             print("test-zy(uccsd): before compute_excitation_lists_singlet-1")
@@ -274,12 +276,13 @@ class UCCSD(VariationalForm):
         d_e_list = []
         for op, index in results:
             if op is not None and not op.is_empty():
-                hopping_ops.append(op)
 
                 ### ZY test  
-                print('test-zy(uccsd): op, index, and pauli strings')
+                print('test-zy(uccsd): op, index, and pauli strings', len(hopping_ops), self._depth)
                 print(index)
                 print(op)
+
+                hopping_ops.append(op)
                 for kk in range(len(op._paulis)):
                    print(op._paulis[kk][0],op._paulis[kk][1])
                 ### test
