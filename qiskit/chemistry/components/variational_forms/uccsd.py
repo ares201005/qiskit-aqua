@@ -112,7 +112,7 @@ class UCCSD(VariationalForm):
                         {'jordan_wigner', 'parity', 'bravyi_kitaev'})
         validate_min('num_time_slices', num_time_slices, 1)
         validate_in_set('method_singles', method_singles, {'both', 'alpha', 'beta'})
-        validate_in_set('method_doubles', method_doubles, {'ucc', 'pucc', 'succ', 'succ_full'})
+        validate_in_set('method_doubles', method_doubles, {'ucc', 'pucc', 'succ', 'succ_full', 'entangle'})
         validate_in_set('excitation_type', excitation_type, {'sd', 's', 'd'})
         super().__init__()
 
@@ -162,6 +162,7 @@ class UCCSD(VariationalForm):
         self._single_excitations, self._double_excitations = \
             UCCSD.compute_excitation_lists([self._num_alpha, self._num_beta], self._num_orbitals,
                                            active_occupied, active_unoccupied,
+                                           entangled_occ, entangled_unocc,
                                            same_spin_doubles=self.same_spin_doubles,
                                            method_singles=self._method_singles,
                                            method_doubles=self._method_doubles,
@@ -186,6 +187,7 @@ class UCCSD(VariationalForm):
                 UCCSD.compute_excitation_lists([self._num_alpha, self._num_beta],
                                                self._num_orbitals,
                                                active_occupied, active_unoccupied,
+                                               entangled_occ, entangled_unocc,
                                                same_spin_doubles=self.same_spin_doubles,
                                                method_singles=self._method_singles,
                                                method_doubles=self._method_doubles,
@@ -482,7 +484,10 @@ class UCCSD(VariationalForm):
 
     @staticmethod
     def compute_excitation_lists(num_particles, num_orbitals, active_occ_list=None,
-                                 active_unocc_list=None, same_spin_doubles=True,
+                                 active_unocc_list=None, 
+                                 entangled_occ=None,
+                                 entangled_unocc=None,
+                                 same_spin_doubles=True,
                                  method_singles='both', method_doubles='ucc',
                                  excitation_type='sd'):
         """
@@ -563,6 +568,14 @@ class UCCSD(VariationalForm):
 
         #ZY: permute the list (to be finished)
 
+        # exclude these not in the entangled lists
+        if entangled_occ is not None:
+             active_occ_list_alpha = [i for i in active_occ_list_alpha if i in entangled_occ]
+             active_occ_list_beta  = [i for i in active_occ_list_beta  if i in entangled_occ]
+             #entangled_occ_list_alpha = [i for i in active_occ_list_alpha if i in entangled_occ]
+             #entangled_occ_list_beta  = [i for i in active_occ_list_beta  if i in entangled_occ]
+
+
         print('----  active occ list (alpha) ---')
         print(active_occ_list_alpha)
         print('----  active occ list (beta) ---')
@@ -587,6 +600,13 @@ class UCCSD(VariationalForm):
             active_unocc_list_beta = [i + beta_idx for i in range(num_beta, num_orbitals // 2)]
 
         #ZY:
+        # exclude these not in the entangled lists
+        if entangled_unocc is not None:
+             active_unocc_list_alpha = [i for i in active_unocc_list_alpha if i in entangled_unocc]
+             active_unocc_list_beta  = [i for i in active_unocc_list_beta  if i in entangled_unocc]
+             #entangled_unocc_list_alpha = [i for i in active_unocc_list_alpha if i in entangled_unocc]
+             #entangled_unocc_list_beta  = [i for i in active_unocc_list_beta  if i in entangled_unocc]
+
         print('----  active unocc list (alpha) ---')
         print(active_unocc_list_alpha)
 
@@ -623,6 +643,7 @@ class UCCSD(VariationalForm):
                     single_excitations.append([occ_beta, unocc_beta])
             logger.info('Singles excitations with alphas and betas orbitals are used.')
 
+
         # different methods of excitations for double excitations
         if method_doubles in ['ucc', 'succ_full']:
 
@@ -632,6 +653,17 @@ class UCCSD(VariationalForm):
                         for unocc_beta in active_unocc_list_beta:
                             double_excitations.append(
                                 [occ_alpha, unocc_alpha, occ_beta, unocc_beta])
+
+        #elif method_doubles in ['entangle']:
+
+        #    for occ_alpha in entangled_occ_list_alpha:
+        #        for unocc_alpha in entangled_unocc_list_alpha:
+        #            for occ_beta in entangled_occ_list_beta:
+        #                for unocc_beta in entangled_unocc_list_beta:
+        #                    double_excitations.append(
+        #                        [occ_alpha, unocc_alpha, occ_beta, unocc_beta])
+        #    same_spin_doubles = False
+
         # pair ucc
         elif method_doubles == 'pucc':
             for occ_alpha in active_occ_list_alpha:

@@ -115,7 +115,8 @@ class WeightedPauliOperator(BaseOperator):
             int: number of qubits
         """
         if not self.is_empty():
-            return self._paulis[0][1].numberofqubits
+            return self._paulis[0][1].num_qubits
+            #return self._paulis[0][1].numberofqubits
         else:
             logger.warning("Operator is empty, Return 0.")
             return 0
