@@ -104,3 +104,65 @@ def get_subsystems_counts(complete_system_counts, post_select_index=None, post_s
                     subsystem_measurements[post_select_index] == post_select_flag):
                 d_l[k] += count
     return [dict(d) for d in subsystems_counts]
+
+def get_entropy(rho):
+
+    w, v = np.linalg.eig(rho)
+
+    #print('rho=',rho)
+    #print('w=', w)
+
+    s = 0.0
+    for omega in w:
+       g = np.real(omega) 
+       if g > 1.E-12:
+          s = s - g * np.log(g)
+
+    return s
+
+def get_mutual_info(statevector,num_qubits):
+
+    """
+      calculate the mutual informaiton
+      input: statevector, number of qubits
+
+    """
+    mutual = np.zeros((num_qubits,num_qubits)) # [ [0] * num_qubits ] * num_qubits
+    #mutual = []
+    qubits = range(num_qubits)
+
+    cost = 0.0
+    for i in qubits:
+      tracei = [x for x in qubits if x != i]
+      rhoi = get_subsystem_density_matrix(statevector, tracei)
+
+      si = get_entropy(rhoi)
+
+      #mutuali = []
+      for j in qubits:
+         Iij = 0.0
+         print("test--", i,j)
+         if j != i:
+           print("true", i,j)
+           tracej = [x for x in qubits if x != j]
+           rhoj = get_subsystem_density_matrix(statevector, tracej)
+           sj = get_entropy(rhoj)
+           
+           traceij = [x for x in tracej if x != i]
+           print('tracei=',tracei)
+           print('tracej=',tracej)
+           print('traceij=',traceij)
+           rhoij = get_subsystem_density_matrix(statevector, traceij)
+           
+           sij = get_entropy(rhoij)
+           Iij = si + sj - sij
+           
+         mutual[i][j] = Iij
+         cost = cost + Iij * (i-j) * (i-j) 
+         print('test-i,j,Iij=', i, j, mutual[i][j])
+         #mutuali.append(Iij)
+
+      #mutual.append(mutuali)
+    print('total cost=', cost)
+    return mutual
+

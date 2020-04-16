@@ -29,8 +29,10 @@ Variational Forms
    :nosignatures:
 
    UCCSD
+   QUCCSD
 
 """
 from .uccsd import UCCSD
+from .quccsd import QUCCSD
 
-__all__ = ['UCCSD']
+__all__ = ['UCCSD', 'QUCCSD']
