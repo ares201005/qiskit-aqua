@@ -275,15 +275,15 @@ class UCCSD(VariationalForm):
             if op is not None and not op.is_empty():
 
                 ### ZY test  
-                print('test-zy(uccsd): op, index, and pauli strings', len(hopping_ops), self._depth)
+                print('test-zy(uccsd): op, index, and pauli strings', len(hopping_ops), self._reps)
                 print(index)
                 print(op)
 
-                hopping_ops.append(op)
                 for kk in range(len(op._paulis)):
                    print(op._paulis[kk][0],op._paulis[kk][1])
                 ### test
 
+                hopping_ops.append(op)
                 if len(index) == 2:  # for double excitation
                     s_e_list.append(index)
                 else:  # for double excitation

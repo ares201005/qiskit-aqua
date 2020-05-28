@@ -348,7 +348,7 @@ class VQE(VQAlgorithm, MinimumEigensolver):
 
         self._check_operator_varform()
 
-        print("use_simulator_snapshot_mode    = ",self._use_simulator_snapshot_mode)
+        #print("use_simulator_snapshot_mode    = ",self._use_simulator_snapshot_mode)
         print("quantum_instance.is_statevector=", self._quantum_instance.is_statevector)
 
         self._quantum_instance.circuit_summary = True
