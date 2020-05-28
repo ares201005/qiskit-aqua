@@ -149,14 +149,6 @@ class VQE(VQAlgorithm, MinimumEigensolver):
                          quantum_instance=quantum_instance)
         self._ret = None
         self._eval_time = None
- 
-        #self._optimizer.set_max_evals_grouped(max_evals_grouped)
-        #self._callback = callback
-        #if initial_point is None:
-        #    #print('test-zy (VQE): initial_point is none! before preferred_init_points')
-        #    self._initial_point = var_form.preferred_init_points
-        #    print('test-zy(VQE): initial_point=', self._initial_point)
-        #self._operator = operator
         self._optimizer.set_max_evals_grouped(max_evals_grouped)
         self._callback = callback
 
@@ -348,9 +340,6 @@ class VQE(VQAlgorithm, MinimumEigensolver):
 
         self._check_operator_varform()
 
-        print("use_simulator_snapshot_mode    = ",self._use_simulator_snapshot_mode)
-        print("quantum_instance.is_statevector=", self._quantum_instance.is_statevector)
-
         self._quantum_instance.circuit_summary = True
 
         self._eval_count = 0
@@ -373,13 +362,6 @@ class VQE(VQAlgorithm, MinimumEigensolver):
         self._eval_time = self._ret['eval_time']
         logger.info('Optimization complete in %s seconds.\nFound opt_params %s in %s evals',
                     self._eval_time, self._ret['opt_params'], self._eval_count)
-
-        #ZY
-        print('')
-        theta = self._ret['opt_params'].tolist()
-        print('Optimization complete in %d evals' % self._eval_count)
-        print('optimization parameters=', theta)
-
         self._ret['eval_count'] = self._eval_count
 
         result = VQEResult()
@@ -452,8 +434,6 @@ class VQE(VQAlgorithm, MinimumEigensolver):
         param_bindings = dict(zip(self._var_form_params, parameter_sets.transpose().tolist()))
 
         start_time = time()
-
-        #print('test-zy: call quantum_instance.execulte')
         sampled_expect_op = self._circuit_sampler.convert(self._expect_op, params=param_bindings)
         means = np.real(sampled_expect_op.eval())
 
