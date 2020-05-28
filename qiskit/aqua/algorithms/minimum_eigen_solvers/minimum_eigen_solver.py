@@ -13,18 +13,18 @@
 # that they have been altered from the originals.
 
 """The Minimum Eigensolver interface"""
+
 import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union, Dict
 
 import numpy as np
 from qiskit.aqua.algorithms import AlgorithmResult
-from qiskit.aqua.operators import BaseOperator
+from qiskit.aqua.operators import OperatorBase, LegacyBaseOperator
 
 
 class MinimumEigensolver(ABC):
-    """
-    The Minimum Eigensolver Interface.
+    """The Minimum Eigensolver Interface.
 
     Algorithms that can compute a minimum eigenvalue for an operator
     may implement this interface to allow different algorithms to be
@@ -33,8 +33,11 @@ class MinimumEigensolver(ABC):
 
     @abstractmethod
     def compute_minimum_eigenvalue(
-            self, operator: Optional[BaseOperator] = None,
-            aux_operators: Optional[List[BaseOperator]] = None) -> 'MinimumEigensolverResult':
+            self,
+            operator: Optional[Union[OperatorBase, LegacyBaseOperator]] = None,
+            aux_operators: Optional[List[Optional[Union[OperatorBase,
+                                                        LegacyBaseOperator]]]] = None
+    ) -> 'MinimumEigensolverResult':
         """
         Computes minimum eigenvalue. Operator and aux_operators can be supplied here and
         if not None will override any already set into algorithm so it can be reused with
@@ -55,10 +58,11 @@ class MinimumEigensolver(ABC):
         pass
 
     def supports_aux_operators(self) -> bool:
-        """
+        """Whether computing the expectation value of auxiliary operators is supported.
+
         If the minimum eigensolver computes an eigenstate of the main operator then it
         can compute the expectation value of the aux_operators for that state. Otherwise
-        they will be ignored
+        they will be ignored.
 
         Returns:
             True if aux_operator expectations can be evaluated, False otherwise
@@ -67,27 +71,29 @@ class MinimumEigensolver(ABC):
 
     @property
     @abstractmethod
-    def operator(self) -> BaseOperator:
-        """ returns operator """
-        pass
+    def operator(self) -> Optional[Union[OperatorBase, LegacyBaseOperator]]:
+        """Return the operator."""
+        raise NotImplementedError
 
     @operator.setter
     @abstractmethod
-    def operator(self, operator: BaseOperator) -> None:
-        """ set operator """
-        pass
+    def operator(self, operator: Union[OperatorBase, LegacyBaseOperator]) -> None:
+        """Set the operator."""
+        raise NotImplementedError
 
     @property
     @abstractmethod
-    def aux_operators(self) -> List[BaseOperator]:
-        """ returns aux operators """
-        pass
+    def aux_operators(self) -> Optional[List[Optional[OperatorBase]]]:
+        """Returns the auxiliary operators."""
+        raise NotImplementedError
 
     @aux_operators.setter
     @abstractmethod
-    def aux_operators(self, aux_operators: List[BaseOperator]) -> None:
-        """ set aux operators """
-        pass
+    def aux_operators(self,
+                      aux_operators: Optional[List[Optional[Union[OperatorBase,
+                                                                  LegacyBaseOperator]]]]) -> None:
+        """Set the auxiliary operators."""
+        raise NotImplementedError
 
 
 class MinimumEigensolverResult(AlgorithmResult):

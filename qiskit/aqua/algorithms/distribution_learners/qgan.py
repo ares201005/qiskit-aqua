@@ -12,11 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""
-Quantum Generative Adversarial Network.
-`Quantum Generative Adversarial Networks for learning and loading random distributions
-    <https://www.nature.com/articles/s41534-019-0223-2>`_
-"""
+"""Quantum Generative Adversarial Network."""
 
 from typing import Optional, Union
 import csv
@@ -26,6 +22,7 @@ import logging
 import numpy as np
 from scipy.stats import entropy
 
+from qiskit.circuit import QuantumCircuit
 from qiskit.providers import BaseBackend
 from qiskit.aqua import QuantumInstance, AquaError, aqua_globals
 from qiskit.aqua.algorithms import QuantumAlgorithm
@@ -33,6 +30,9 @@ from qiskit.aqua.components.neural_networks.discriminative_network import Discri
 from qiskit.aqua.components.neural_networks.generative_network import GenerativeNetwork
 from qiskit.aqua.components.neural_networks.quantum_generator import QuantumGenerator
 from qiskit.aqua.components.neural_networks.numpy_discriminator import NumPyDiscriminator
+from qiskit.aqua.components.optimizers import Optimizer
+from qiskit.aqua.components.uncertainty_models import UnivariateVariationalDistribution
+from qiskit.aqua.components.uncertainty_models import MultivariateVariationalDistribution
 from qiskit.aqua.utils.dataset_helper import discretize_and_truncate
 from qiskit.aqua.utils.validation import validate_min
 
@@ -42,11 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 class QGAN(QuantumAlgorithm):
-    """
-    The Quantum Generative Adversarial Network algorithm.
+    """The Quantum Generative Adversarial Network algorithm.
 
-    `qGAN <https://arxiv.org/abs/1904.00043>`__ is a hybrid quantum-classical algorithm used
-    for generative modeling tasks.
+    The qGAN [1] is a hybrid quantum-classical algorithm used for generative modeling tasks.
 
     This adaptive algorithm uses the interplay of a generative
     :class:`~qiskit.aqua.components.neural_networks.GenerativeNetwork` and a
@@ -59,6 +57,12 @@ class QGAN(QuantumAlgorithm):
     samples. Eventually, the quantum generator learns the training data's underlying probability
     distribution. The trained quantum generator loads a quantum state which is a model of the
     target distribution.
+
+    **References:**
+
+    [1] Zoufal et al.,
+        `Quantum Generative Adversarial Networks for learning and loading random distributions
+        <https://www.nature.com/articles/s41534-019-0223-2>`_
     """
 
     def __init__(self, data: np.ndarray, bounds: Optional[np.ndarray] = None,
@@ -116,7 +120,7 @@ class QGAN(QuantumAlgorithm):
         # pylint: disable=unsubscriptable-object
         if np.ndim(data) > 1:
             if self._num_qubits is None:
-                self._num_qubits = np.ones[len(data[0])]*3
+                self._num_qubits = np.ones[len(data[0])] * 3
         else:
             if self._num_qubits is None:
                 self._num_qubits = np.array([3])
@@ -188,16 +192,19 @@ class QGAN(QuantumAlgorithm):
         return self._generator
 
     # pylint: disable=unused-argument
-    def set_generator(self, generator_circuit=None,
-                      generator_init_params=None, generator_optimizer=None):
-        """
-        Initialize generator.
+    def set_generator(self, generator_circuit: Optional[Union[QuantumCircuit,
+                                                              UnivariateVariationalDistribution,
+                                                              MultivariateVariationalDistribution]
+                                                        ] = None,
+                      generator_init_params: Optional[np.ndarray] = None,
+                      generator_optimizer: Optional[Optimizer] = None):
+        """Initialize generator.
 
         Args:
-            generator_circuit (VariationalForm): parameterized quantum circuit which sets
+            generator_circuit: parameterized quantum circuit which sets
                 the structure of the quantum generator
-            generator_init_params(numpy.ndarray): initial parameters for the generator circuit
-            generator_optimizer (Optimizer): optimizer to be used for the training of the generator
+            generator_init_params: initial parameters for the generator circuit
+            generator_optimizer: optimizer to be used for the training of the generator
         """
         self._generator = QuantumGenerator(self._bounds, self._num_qubits,
                                            generator_circuit, generator_init_params,
@@ -274,15 +281,15 @@ class QGAN(QuantumAlgorithm):
         for e in range(self._num_epochs):
             aqua_globals.random.shuffle(self._data)
             index = 0
-            while (index+self._batch_size) <= len(self._data):
-                real_batch = self._data[index: index+self._batch_size]
+            while (index + self._batch_size) <= len(self._data):
+                real_batch = self._data[index: index + self._batch_size]
                 index += self._batch_size
                 generated_batch, generated_prob = self._generator.get_output(self._quantum_instance,
                                                                              shots=self._batch_size)
 
                 # 1. Train Discriminator
                 ret_d = self._discriminator.train([real_batch, generated_batch],
-                                                  [np.ones(len(real_batch))/len(real_batch),
+                                                  [np.ones(len(real_batch)) / len(real_batch),
                                                    generated_prob])
                 d_loss_min = ret_d['loss']
 

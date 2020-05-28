@@ -41,8 +41,8 @@ def dump(outpath: str, norb: int, nelec: int, hijs: List[float], hijkls: List[fl
     hij, hij_b = hijs
     hijkl, hijkl_ba, hijkl_bb = hijkls
     # assert that either all beta variables are None or all of them are not
-    assert all([h is None for h in [hij_b, hijkl_ba, hijkl_bb]]) \
-        or all([h is not None for h in [hij_b, hijkl_ba, hijkl_bb]])
+    assert all(h is None for h in [hij_b, hijkl_ba, hijkl_bb]) \
+        or all(h is not None for h in [hij_b, hijkl_ba, hijkl_bb])
     assert norb == hij.shape[0] == hijkl.shape[0]
     mos = range(norb)
     with open(outpath, 'w') as outfile:
@@ -53,7 +53,7 @@ def dump(outpath: str, norb: int, nelec: int, hijs: List[float], hijkls: List[fl
         else:
             assert len(orbsym) == norb
             outfile.write(' ORBSYM=' + ','.join(orbsym) + '\n')
-        outfile.write(' ISYM={:d},\n/&END\n'.format(isym))
+        outfile.write(' ISYM={:d},\n&END\n'.format(isym))
         # append 2e integrals
         _dump_2e_ints(hijkl, mos, outfile)
         if hijkl_ba is not None:

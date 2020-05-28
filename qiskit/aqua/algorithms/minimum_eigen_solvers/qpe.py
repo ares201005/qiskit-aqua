@@ -11,9 +11,8 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-"""
-The Quantum Phase Estimation Algorithm.
-"""
+
+"""The Quantum Phase Estimation Algorithm."""
 
 import logging
 from typing import Optional, List, Dict, Union
@@ -22,14 +21,15 @@ import warnings
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Pauli
+
 from qiskit.providers import BaseBackend
 from qiskit.aqua import QuantumInstance
-from qiskit.aqua.operators import op_converter
+from qiskit.aqua.operators import op_converter, OperatorBase
 from qiskit.aqua.utils import get_subsystem_density_matrix
 from qiskit.aqua.algorithms import QuantumAlgorithm
 from qiskit.aqua.circuits import PhaseEstimationCircuit
 from qiskit.aqua.operators import WeightedPauliOperator
-from qiskit.aqua.operators import BaseOperator
+from qiskit.aqua.operators import LegacyBaseOperator
 from qiskit.aqua.components.initial_states import InitialState
 from qiskit.aqua.components.iqfts import IQFT
 from qiskit.aqua.utils.validation import validate_min, validate_in_set
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 # pylint: disable=invalid-name
 
 
-class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
+class QPE(QuantumAlgorithm, MinimumEigensolver):
     """The Quantum Phase Estimation algorithm.
 
     QPE (also sometimes abbreviated as PEA, for Phase Estimation Algorithm), has two quantum
@@ -58,9 +58,9 @@ class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
     """
 
     def __init__(self,
-                 operator: Optional[BaseOperator] = None,
+                 operator: Optional[Union[OperatorBase, LegacyBaseOperator]] = None,
                  state_in: Optional[InitialState] = None,
-                 iqft: Optional[IQFT] = None,
+                 iqft: Optional[Union[QuantumCircuit, IQFT]] = None,
                  num_time_slices: int = 1,
                  num_ancillae: int = 1,
                  expansion_mode: str = 'trotter',
@@ -90,7 +90,15 @@ class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
         validate_min('expansion_order', expansion_order, 1)
         super().__init__(quantum_instance)
         self._state_in = state_in
+
+        if isinstance(iqft, IQFT):
+            warnings.warn('The qiskit.aqua.components.iqfts.IQFT module is deprecated as of 0.7.0 '
+                          'and will be removed no earlier than 3 months after the release. '
+                          'You should pass a QuantumCircuit instead, see '
+                          'qiskit.circuit.library.QFT and the .inverse() method.',
+                          DeprecationWarning, stacklevel=2)
         self._iqft = iqft
+
         self._num_time_slices = num_time_slices
         self._num_ancillae = num_ancillae
         self._expansion_mode = expansion_mode
@@ -104,12 +112,15 @@ class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
         self._phase_estimation_circuit = None
         self._setup(operator)
 
-    def _setup(self, operator: Optional[BaseOperator]) -> None:
+    def _setup(self, operator: Optional[Union[OperatorBase, LegacyBaseOperator]]) -> None:
         self._operator = None
         self._ret = {}
         self._pauli_list = None
         self._phase_estimation_circuit = None
         if operator:
+            # Convert to Legacy Operator if Operator flow passed in
+            if isinstance(operator, OperatorBase):
+                operator = operator.to_legacy_op()
             self._operator = op_converter.to_weighted_pauli_operator(operator.copy())
             self._ret['translation'] = sum([abs(p[0]) for p in self._operator.reorder_paulis()])
             self._ret['stretch'] = 0.5 / self._ret['translation']
@@ -141,23 +152,25 @@ class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
             )
 
     @property
-    def operator(self) -> Optional[BaseOperator]:
+    def operator(self) -> Optional[LegacyBaseOperator]:
         """ Returns operator """
         return self._in_operator
 
     @operator.setter
-    def operator(self, operator: BaseOperator) -> None:
+    def operator(self, operator: Union[OperatorBase, LegacyBaseOperator]) -> None:
         """ set operator """
         self._in_operator = operator
         self._setup(operator)
 
     @property
-    def aux_operators(self) -> List[BaseOperator]:
+    def aux_operators(self) -> Optional[List[Union[OperatorBase, LegacyBaseOperator]]]:
         """ Returns aux operators """
         raise TypeError('aux_operators not supported.')
 
     @aux_operators.setter
-    def aux_operators(self, aux_operators: List[BaseOperator]) -> None:
+    def aux_operators(self,
+                      aux_operators: Optional[List[Union[OperatorBase, LegacyBaseOperator]]]
+                      ) -> None:
         """ Set aux operators """
         raise TypeError('aux_operators not supported.')
 
@@ -178,8 +191,10 @@ class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
         return None
 
     def compute_minimum_eigenvalue(
-            self, operator: Optional[BaseOperator] = None,
-            aux_operators: Optional[List[BaseOperator]] = None) -> MinimumEigensolverResult:
+            self,
+            operator: Optional[Union[OperatorBase, LegacyBaseOperator]] = None,
+            aux_operators: Optional[List[Union[OperatorBase, LegacyBaseOperator]]] = None
+    ) -> MinimumEigensolverResult:
         super().compute_minimum_eigenvalue(operator, aux_operators)
         return self._run()
 
@@ -231,28 +246,6 @@ class QPEMinimumEigensolver(QuantumAlgorithm, MinimumEigensolver):
             result.eigenvalue = self._ret['eigvals'][0]
 
         return result
-
-
-class QPE(QPEMinimumEigensolver):
-    """
-    The deprecated Quantum Phase Estimation algorithm.
-    """
-
-    def __init__(self,
-                 operator: Optional[BaseOperator] = None,
-                 state_in: Optional[InitialState] = None,
-                 iqft: Optional[IQFT] = None,
-                 num_time_slices: int = 1,
-                 num_ancillae: int = 1,
-                 expansion_mode: str = 'trotter',
-                 expansion_order: int = 1,
-                 shallow_circuit_concat: bool = False) -> None:
-        warnings.warn('Deprecated class {}, use {}.'.format('QPE',
-                                                            'QPEMinimumEigenSolver'),
-                      DeprecationWarning)
-        super().__init__(operator, state_in, iqft,
-                         num_time_slices, num_ancillae, expansion_mode,
-                         expansion_order, shallow_circuit_concat)
 
 
 class QPEResult(MinimumEigensolverResult):
