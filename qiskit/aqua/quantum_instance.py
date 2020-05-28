@@ -204,7 +204,7 @@ class QuantumInstance:
         self._job_callback = job_callback
         logger.info(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Overload string.
 
         Returns:
@@ -244,6 +244,10 @@ class QuantumInstance:
 
         return transpiled_circuits
 
+    def assemble(self, circuits):
+        """ assemble circuits """
+        return compiler.assemble(circuits, **self._run_config.to_dict())
+
     def execute(self, circuits, had_transpiled=False):
         """
         A wrapper to interface with quantum backend.
@@ -268,7 +272,7 @@ class QuantumInstance:
             circuits = self.transpile(circuits)
 
         # assemble
-        qobj = compiler.assemble(circuits, **self._run_config.to_dict())
+        qobj = self.assemble(circuits)
 
         #print('entering quantum instance execute!-YZ',self._meas_error_mitigation_cls is not None)
         
@@ -305,8 +309,8 @@ class QuantumInstance:
             if build_cals_matrix:
                 logger.info("Updating qobj with the circuits for measurement error mitigation.")
                 use_different_shots = not (
-                    self._meas_error_mitigation_shots is None or
-                    self._meas_error_mitigation_shots == self._run_config.shots)
+                    self._meas_error_mitigation_shots is None
+                    or self._meas_error_mitigation_shots == self._run_config.shots)
                 temp_run_config = copy.deepcopy(self._run_config)
                 if use_different_shots:
                     temp_run_config.shots = self._meas_error_mitigation_shots
