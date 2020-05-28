@@ -270,7 +270,7 @@ class QuantumInstance:
         # assemble
         qobj = compiler.assemble(circuits, **self._run_config.to_dict())
 
-        print('entering quantum instance execute!-YZ',self._meas_error_mitigation_cls is not None)
+        #print('entering quantum instance execute!-YZ',self._meas_error_mitigation_cls is not None)
         
 
         if self._meas_error_mitigation_cls is not None:
@@ -319,7 +319,7 @@ class QuantumInstance:
                                                             self._compile_config,
                                                             temp_run_config)
                 if use_different_shots:
-                    logger.info("run_qobj0") # YZ
+                    #logger.info("run_qobj0") # YZ
                     cals_result = run_qobj(cals_qobj, self._backend, self._qjob_config,
                                            self._backend_options,
                                            self._noise_config,
@@ -330,7 +330,7 @@ class QuantumInstance:
                 else:
                     # insert the calibration circuit into main qobj if the shots are the same
                     qobj.experiments[0:0] = cals_qobj.experiments
-                    logger.info("run_qobj1") # YZ
+                    #logger.info("run_qobj1") # YZ
                     result = run_qobj(qobj, self._backend, self._qjob_config,
                                       self._backend_options, self._noise_config,
                                       self._skip_qobj_validation, self._job_callback)
@@ -345,7 +345,7 @@ class QuantumInstance:
                 self._meas_error_mitigation_fitters[qubit_index_str] = \
                     (meas_error_mitigation_fitter, time.time())
             else:
-                logger.info("run_qobj2") # YZ
+                #logger.info("run_qobj2") # YZ
                 result = run_qobj(qobj, self._backend, self._qjob_config,
                                   self._backend_options, self._noise_config,
                                   self._skip_qobj_validation, self._job_callback)
@@ -371,7 +371,7 @@ class QuantumInstance:
                         result.results[n] = tmp_result.results[i]
 
         else:
-            print("run_qobj3") # YZ
+            #print("run_qobj3") # YZ
             result = run_qobj(qobj, self._backend, self._qjob_config,
                               self._backend_options, self._noise_config,
                               self._skip_qobj_validation, self._job_callback)

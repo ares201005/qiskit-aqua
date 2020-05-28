@@ -530,7 +530,7 @@ class QVQE(VQAlgorithm, MinimumEigensolver):
 
         start_time = time()
 
-        print('test-zy: call quantum_instance.execulte')
+        #print('test-zy: call quantum_instance.execulte')
         result = self._quantum_instance.execute(to_be_simulated_circuits,
                                                 self._parameterized_circuits is not None)
 
