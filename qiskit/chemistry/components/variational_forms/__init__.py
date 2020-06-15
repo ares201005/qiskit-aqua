@@ -33,6 +33,6 @@ Variational Forms
 
 """
 from .uccsd import UCCSD
-from .quccsd import QUCCSD
+#from .quccsd import QUCCSD
 
 __all__ = ['UCCSD', 'QUCCSD']
